@@ -5,6 +5,8 @@ import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+
 @Repository
 public interface ArticlePersistence {
 
@@ -17,6 +19,9 @@ public interface ArticlePersistence {
     Flux<Article> findByBarcodeAndDescriptionAndReferenceAndStockLessThanAndDiscontinuedNullSafe(
             String barcode, String description, String reference, Integer stock, Boolean discontinued);
 
+    Flux<Article> findByBarcodeAndDescriptionAndReferenceAndStockLessThanAndDiscontinuedAndTagNullSafe(
+            String barcode, String description, String reference, Integer stock, Boolean discontinued, String tagId);
+
     Mono<Article> update(String barcode, Article article);
 
     Mono<Article> readAndWriteStockByBarcodeAssured(String barcode, Integer stockIncrement);
@@ -26,4 +31,8 @@ public interface ArticlePersistence {
     Flux<Article> findByProviderCompany(String company);
 
     Flux<Article> findByDiscontinuedIsFalse();
+
+    Flux<Article> findByTag(String tagId);
+
+    Flux<Article> findAll();
 }

@@ -6,6 +6,8 @@ import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+
 public interface ArticleReactive extends ReactiveMongoRepository<ArticleEntity, String> {
     Mono<ArticleEntity> findByBarcode(String barcode);
 
@@ -21,6 +23,17 @@ public interface ArticleReactive extends ReactiveMongoRepository<ArticleEntity, 
     Flux<ArticleEntity> findByBarcodeAndDescriptionAndReferenceAndStockLessThanAndDiscontinuedNullSafe(
             String barcode, String description, String reference, Integer stock, Boolean discontinued);
 
+    @Query("{$and:[" // allow NULL: all elements
+            + "?#{ [0] == null ? {_id : {$ne:null}} : { barcode : {$regex:[0], $options: 'i'} } },"
+            + "?#{ [1] == null ? {_id : {$ne:null}} : { description : {$regex:[1], $options: 'i'} } },"
+            + "?#{ [2] == null ? {_id : {$ne:null}} : { reference : {$regex:[2], $options: 'i'} } },"
+            + "?#{ [3] == null ? {_id : {$ne:null}} : { stock : {$lt:[3]} } },"
+            + "?#{ [4] == null ? {_id : {$ne:null}} : { discontinued : [4] } },"
+            + "?#{ [5] == null ? {_id : {$ne:null}} : { 'tag._id' : [5] } }"
+            + "] }")
+    Flux<ArticleEntity> findByBarcodeAndDescriptionAndReferenceAndStockLessThanAndDiscontinuedAndTagNullSafe(
+            String barcode, String description, String reference, Integer stock, Boolean discontinued, String tagId);
+
     Flux<ArticleEntity> findByProviderEntityIsNull();
 
     @Query("{$and:[" // allow NULL in barcode
@@ -30,4 +43,6 @@ public interface ArticleReactive extends ReactiveMongoRepository<ArticleEntity, 
     Flux<ArticleEntity> findByBarcodeLikeAndNotDiscontinuedNullSafe(String barcode);
 
     Flux<ArticleEntity> findByDiscontinuedIsFalse();
+
+    Flux<ArticleEntity> findByTag_IdAndDiscontinuedIsFalse(String tagId);
 }

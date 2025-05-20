@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -31,15 +32,21 @@ public class Article {
     private Integer stock;
     private Tax tax;
     private Boolean discontinued;
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss") // pattern="dd/MM/yyyy hh:mm" o iso = DateTimeFormat.ISO.TIME
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS") // pattern="dd/MM/yyyy hh:mm" o iso = DateTimeFormat.ISO.TIME
     private LocalDateTime registrationDate;
     private String providerCompany;
+    private Tag tag;
+
+    public String getTagId() {
+        return tag != null ? tag.getId() : null;
+    }
 
     public static Article ofBarcodeDescriptionStock(Article article) {
         return Article.builder()
                 .barcode(article.getBarcode())
                 .description(article.getDescription())
                 .stock(article.getStock())
+                .tag(article.getTag())
                 .build();
     }
 

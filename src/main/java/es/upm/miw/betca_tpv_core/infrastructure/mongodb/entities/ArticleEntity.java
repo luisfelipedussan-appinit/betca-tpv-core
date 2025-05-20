@@ -14,6 +14,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
 
 @Data
@@ -38,6 +39,9 @@ public class ArticleEntity {
     @DBRef(lazy = true)
     private ProviderEntity providerEntity;
 
+    @DBRef(lazy = true)
+    private TagEntity tag;
+
     public ArticleEntity(Article article, ProviderEntity providerEntity) {
         BeanUtils.copyProperties(article, this);
         this.providerEntity = providerEntity;
@@ -52,6 +56,9 @@ public class ArticleEntity {
         BeanUtils.copyProperties(this, article);
         if (Objects.nonNull(this.getProviderEntity())) {
             article.setProviderCompany(this.getProviderEntity().getCompany());
+        }
+        if (Objects.nonNull(this.getTag())) {
+            article.setTag(this.getTag().toTag());
         }
         return article;
     }

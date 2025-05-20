@@ -6,23 +6,29 @@ import es.upm.miw.betca_tpv_core.domain.model.Article;
 import es.upm.miw.betca_tpv_core.domain.persistence.ArticlePersistence;
 import es.upm.miw.betca_tpv_core.infrastructure.mongodb.daos.ArticleReactive;
 import es.upm.miw.betca_tpv_core.infrastructure.mongodb.daos.ProviderReactive;
+import es.upm.miw.betca_tpv_core.infrastructure.mongodb.daos.TagReactive;
 import es.upm.miw.betca_tpv_core.infrastructure.mongodb.entities.ArticleEntity;
+import es.upm.miw.betca_tpv_core.infrastructure.mongodb.entities.TagEntity;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+
 @Repository
 public class ArticlePersistenceMongodb implements ArticlePersistence {
 
     private final ProviderReactive providerReactive;
     private final ArticleReactive articleReactive;
+    private final TagReactive tagReactive;
 
     @Autowired
-    public ArticlePersistenceMongodb(ProviderReactive providerReactive, ArticleReactive articleReactive) {
+    public ArticlePersistenceMongodb(ProviderReactive providerReactive, ArticleReactive articleReactive, TagReactive tagReactive) {
         this.providerReactive = providerReactive;
         this.articleReactive = articleReactive;
+        this.tagReactive = tagReactive;
     }
 
     @Override
@@ -36,6 +42,19 @@ public class ArticlePersistenceMongodb implements ArticlePersistence {
                 )
                 .map(providerEntity -> new ArticleEntity(article, providerEntity))
                 .switchIfEmpty(Mono.just(new ArticleEntity(article, null)))
+                .flatMap(articleEntity -> {
+                    if (article.getTag() != null) {
+                        return this.tagReactive.findByName(article.getTag().getName())
+                                .next()
+                                .switchIfEmpty(this.tagReactive.save(new TagEntity(article.getTag())))
+                                .map(tagEntity -> {
+                                    articleEntity.setTag(tagEntity);
+                                    return articleEntity;
+                                });
+                    } else {
+                        return Mono.just(articleEntity);
+                    }
+                })
                 .flatMap(this.articleReactive::save)
                 .map(ArticleEntity::toArticle);
     }
@@ -70,6 +89,20 @@ public class ArticlePersistenceMongodb implements ArticlePersistence {
                                 return articleEntity;
                             });
                 })
+                .flatMap(articleEntity -> {
+                    if (article.getTag() != null) {
+                        return this.tagReactive.findByName(article.getTag().getName())
+                                .next()
+                                .switchIfEmpty(this.tagReactive.save(new TagEntity(article.getTag())))
+                                .map(tagEntity -> {
+                                    articleEntity.setTag(tagEntity);
+                                    return articleEntity;
+                                });
+                    } else {
+                        articleEntity.setTag(null);
+                        return Mono.just(articleEntity);
+                    }
+                })
                 .flatMap(this.articleReactive::save)
                 .map(ArticleEntity::toArticle);
     }
@@ -85,6 +118,14 @@ public class ArticlePersistenceMongodb implements ArticlePersistence {
             String barcode, String description, String reference, Integer stock, Boolean discontinued) {
         return this.articleReactive.findByBarcodeAndDescriptionAndReferenceAndStockLessThanAndDiscontinuedNullSafe(
                         barcode, description, reference, stock, discontinued)
+                .map(ArticleEntity::toArticle);
+    }
+
+    @Override
+    public Flux<Article> findByBarcodeAndDescriptionAndReferenceAndStockLessThanAndDiscontinuedAndTagNullSafe(
+            String barcode, String description, String reference, Integer stock, Boolean discontinued, String tagId) {
+        return this.articleReactive.findByBarcodeAndDescriptionAndReferenceAndStockLessThanAndDiscontinuedAndTagNullSafe(
+                        barcode, description, reference, stock, discontinued, tagId)
                 .map(ArticleEntity::toArticle);
     }
 
@@ -122,6 +163,18 @@ public class ArticlePersistenceMongodb implements ArticlePersistence {
     @Override
     public Flux<Article> findByDiscontinuedIsFalse() {
         return this.articleReactive.findByDiscontinuedIsFalse()
+                .map(ArticleEntity::toArticle);
+    }
+
+    @Override
+    public Flux<Article> findByTag(String tagId) {
+        return this.articleReactive.findByTag_IdAndDiscontinuedIsFalse(tagId)
+                .map(ArticleEntity::toArticle);
+    }
+
+    @Override
+    public Flux<Article> findAll() {
+        return this.articleReactive.findAll()
                 .map(ArticleEntity::toArticle);
     }
 }
